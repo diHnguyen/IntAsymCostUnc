@@ -1,5 +1,5 @@
-# IntAsymCostUnc
-# Network Interdiction with Asymmetric Cost Uncertainty - Di H. Nguyen and J. Cole Smith
+# Network Interdiction with Asymmetric Cost Uncertaint - #IntAsymCostUnc
+# Di H. Nguyen and J. Cole Smith
 
 Link to paper: [TBD]
 
