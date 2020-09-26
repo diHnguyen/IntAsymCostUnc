@@ -1,9 +1,3 @@
-#Removed if x_now != last_x
-#Ready for Upload
-# #PBS -l select=1:ncpus=8:mem=200gb:interconnect=fdr,walltime=72:00:00
-#This line is used in submit_jobarray.pbs originally
-#This version adds the right shortest path when a cell is split
-
 using JuMP 
 using Gurobi
 using LightGraphs
@@ -11,8 +5,9 @@ using DataFrames
 using CSV
 using TimerOutputs
 
-
-#myInstance = string(parse(Int64,ARGS[1]))
+################################################################
+### LOADING TEST INSTANCES #####################################
+################################################################
 myInstance = "2"
 myRun = Dates.format(now(), "HH:MM:SS")
 epsilon = 0.001
@@ -24,7 +19,10 @@ myFile = "./Instances/15NodesPrelim_"*myInstance*".jl"
 include(myFile)
 setparams!(gurobi_env, Heuristics=0.0, Cuts = 0, OutputFlag = 0)
 
-# delta2 = 5
+
+################################################################
+### SET UP THE LOWER BOUND MODEL ###############################
+################################################################
 h1 = Model(solver = GurobiSolver(gurobi_env)) # If we want to add # in Gurobi, then we have to turn of Gurobi's own Cuts 
 
 @variable(h1, 1 >= y_h[1:Len]>=0)
@@ -35,7 +33,6 @@ leaving = 1 .* (edge[j=1:Len,1] .== origin)
 @constraint(h1, sum(y_h[k]*leaving[k] for k=1:Len) == 1)
 
 #Setting constraint for other nodes
-
 for i in all_nodes
     if i != destination
         if i != origin
@@ -45,12 +42,10 @@ for i in all_nodes
         end
     end
 end
-#@objective(h, Min, sum((cL_orig[i]+d[i]*x_now[i])*y_h[i] + q[i] for i=1:Len))
-#print(h1)
-#solve(h1)
 
-
-
+################################################################
+### Determine arc type for a given arc #########################
+################################################################
 function what_arc(T, y, e)
     arc_type = -1 #type 0 = basic-SP, 1 = basic-nonSP, 2 = non-basic
     if T[e] == 1
@@ -64,6 +59,10 @@ function what_arc(T, y, e)
     end
 end
 
+
+################################################################
+### Determine arc type for every arcs ##########################
+################################################################
 function classify_edges_costs(T,c)
     basic = []
     basic_cost = []
@@ -88,27 +87,23 @@ function classify_edges_costs(T,c)
     return basic, basic_cost, i_basic, nonbasic, nonbasic_cost, i_nonbasic
 end
 
+#########################################################
+### Sort arcs that are currently basic, arcs that are ###
+### closer to the sink node get evaluated first	      ###
+#########################################################
 function getSortedBasicArcList(pred, basic, i_basic)
-#     succ = pred.*0
     sorted_basic = copy(basic)
     sorted_i_basic = zeros(Int64,length(i_basic))
-#     println("pred = ", pred)
-#     println("basic = ", basic)
-#     println("i_basic = ", i_basic)
-    
     index_sorting = length(i_basic)
-#     println(index_sorting)
     S = [origin]
-#     println("S = ",S)
+
     while isempty(S) == false
-#         println("S = ",S)
         tailNode = S[1]
         deleteat!(S, 1)  
         for i = 1:length(pred)
             #origin vs destination
             if i != tailNode & pred[i] == tailNode
                 u, v = tailNode, i
-#                 println("(",u , ", ", v,")")
                 myArc = transpose([u, v])
                 temp_index = find(all(basic .== myArc,2))
                 if length(temp_index) > 0
@@ -121,10 +116,12 @@ function getSortedBasicArcList(pred, basic, i_basic)
         end        
     end
     return sorted_i_basic
-#     println("sorted_i_basic = ", sorted_i_basic)
 end
 
-function find_affected_node(T, pred, e, edge) #NEED TO CONSIDER CYCLES
+################################################################
+### Identify affected nodes when an arc's cost changes	     ###
+################################################################
+function find_affected_node(T, pred, e, edge) 
     S = Int[]
     N = Int[]
     push!(S, edge[e,2])
@@ -244,6 +241,9 @@ function Tree_basic(N, nonbasic, nonbasic_cost, label_temp, temp)
     return δ_pos_min, δ_pos_ind, δ_neg_min, δ_neg_ind, temp
 end
 
+################################################################
+### Calculate delta values for basic arcs ######################
+################################################################
 function find_basic_Delta(myNode, Delta_Final_Pos, Delta_Final_Neg, sign, basic, i_basic, nonbasic, i_nonbasic)
     myNonTreeArcList = []
     myTreeArcList = []
@@ -591,6 +591,9 @@ function SA_basic(N, nonbasic, nonbasic_cost, label_temp, temp)
     return δ_min, δ_ind, temp
 end
 
+################################################################
+### Shortest path function #####################################
+################################################################
 function gx_bound(c_L, c_U, c, c_g, x_now, edge)
     
     #println(f,"Current CELL's LB = ", c_L)
@@ -676,6 +679,9 @@ function gx_bound(c_L, c_U, c, c_g, x_now, edge)
     return y, gx, SP, T, pred, label, path
 end
 
+################################################################
+### Solve lower bound model given a cell's info 	     ###
+################################################################
 function hx_bound(h, c_L, c_U, c, d, x_now, edge)
     
     c = (c_L + c_U)/2
@@ -701,6 +707,9 @@ function hx_bound(h, c_L, c_U, c, d, x_now, edge)
     
     return getvalue(y2), hx
 end
+################################################################
+### Corner Test 					     ###
+################################################################
 function corner_g(y, pred, c_L, c_U, d, x_now, edge, origin, destination)
     c_corner = zeros(length(edge[:,1]))
     
