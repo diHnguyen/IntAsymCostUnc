@@ -1,5 +1,5 @@
 # IntAsymCostUnc
-Network Interdiction with Asymmetric Cost Uncertainty - Di H. Nguyen and J. Cole Smith
+# Network Interdiction with Asymmetric Cost Uncertainty - Di H. Nguyen and J. Cole Smith
 
 Link to paper: [TBD]
 
@@ -15,3 +15,5 @@ Algorithms and Enhancements:
 - Algorithms: Base, Multicut, Multicut and Multipartition
 - Enhancements: NoRep, Weighted, Tree-SA, Path-SA, Score 
 (We do not apply Weighted enhancement to Multicut and Multipartition Algorithm.)
+
+Author's notes: We are currently adding more comments to the source code so it can be more readable. However, no changes to the source code will be made.
