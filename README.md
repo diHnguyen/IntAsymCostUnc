@@ -9,7 +9,7 @@ In this repository you will find the following:
 
 Test Instances:
 - Preliminary Test Instances: Networks of 15 nodes with target density 0.2.
-- Test Instances for Computational Analysis: Networks of 15 nodes with target density 0.2.
+- Center Test Instances: Networks of 20 nodes with target density 0.2 + modified test instances based on Center Test Instances.
 
 Algorithms and Enhancements:
 - Algorithms: Base, Multicut, Multicut and Multipartition
